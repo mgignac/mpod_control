@@ -4,7 +4,7 @@ import mpod_control
 #     Controller for HV 
 #############################
 hv_controller = mpod_control.mpod_control(
-    module_type="LV", voltage_range="1000V", dry_run=True
+    module_type="HV", voltage_range="1000V", dry_run=True
 )
 
 hv_controller.set_output_voltage(
