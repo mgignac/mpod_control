@@ -1,0 +1,24 @@
+{
+  "module_type": "ECAL-LV",
+  "voltage_range": "8V",
+  "channels": {
+    "ECAL-LV-0": {
+      "mpod_name": "u104",
+      "voltage": 7.5,
+      "current": 2.0,
+      "sense_rails": [7.0, 8.0]
+    },
+    "ECAL-LV-1": {
+      "mpod_name": "u105",
+      "voltage": 7.5,
+      "current": 2.0,
+      "sense_rails": [7.0, 8.0]
+    },
+    "ECAL-LV-2": {
+      "mpod_name": "u106",
+      "voltage": 7.5,
+      "current": 2.0,
+      "sense_rails": [7.0, 8.0]
+    }
+  }
+}
