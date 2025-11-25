@@ -1,5 +1,6 @@
 import os
 import env
+import subprocess
 
 class mpod_control:
 
@@ -59,7 +60,9 @@ class mpod_control:
         if self.dry_run:
           print(cmd)
         else:
-          os.system(cmd)
+          #os.system(cmd)
+          result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+          return result.stdout.strip()
 
     def snmpset_cmd(self, user_cmd):
 
@@ -106,14 +109,33 @@ class mpod_control:
             "outputSwitch",
             "outputVoltage",
             "outputCurrent",
+            "outputSupervisionMinSenseVoltage",
+            "outputSupervisionMaxSenseVoltage",
             "outputVoltageRiseRate",
             "outputVoltageFallRate",
+            "outputMeasurementTerminalVoltage",
+            "outputMeasurementCurrent"
         ]
 
         for ch_param in ch_params:
-            self.snmpget_cmd(f"{ch_param}.{channel}")
+            ch_rtn = self.snmpget_cmd(f"{ch_param}.{channel}")
 
-    def set_output_voltage(self, name, channel, voltage, current, rise_rate, fall_rate):
+            print(ch_rtn.split())
+         
+
+
+    def set_output_voltage_sense(self, name, channel, voltage, current, sense_rails=[]):
+
+        print(f"**********************************************************")
+        print(f"Setting sense rails...")
+        self.snmpset_cmd(f"outputSupervisionMinSenseVoltage.{channel} F {sense_rails[0]}")
+        self.snmpset_cmd(f"outputSupervisionMaxSenseVoltage.{channel} F {sense_rails[1]}")
+        print(f"**********************************************************")
+
+        self.set_output_voltage(name,channel,voltage,current)
+
+
+    def set_output_voltage(self, name, channel, voltage, current, rise_rate=-1, fall_rate=-1):
 
         self.channel_names[channel]    = name
         self.output_voltages[channel]  = voltage
@@ -134,16 +156,38 @@ class mpod_control:
         print(f"**********************************************************")
 
         # Channel ramp rate
-        print(f"Setting voltage rise and fall rate to {rise_rate} and {fall_rate} V/s")
-        print(f"**********************************************************")
-        self.snmpset_cmd(f"outputVoltageRiseRate.{channel} F {rise_rate}")
-        self.snmpset_cmd(f"outputVoltageFallRate.{channel} F {fall_rate}")
-        print(f"**********************************************************")
+        if rise_rate>0 or fall_rate>0:
+          print(f"Setting voltage rise and fall rate to {rise_rate} and {fall_rate} V/s")
+          print(f"**********************************************************")
+
+          if rise_rate>0:
+            self.snmpset_cmd(f"outputVoltageRiseRate.{channel} F {rise_rate}")
+          if fall_rate>0:
+            self.snmpset_cmd(f"outputVoltageFallRate.{channel} F {fall_rate}")
+          print(f"**********************************************************")
+
 
         # Print channel properties
         self.print_channel_status(channel)
 
         return True
+
+
+    def enable(self,uchan=None):
+
+        for channel in self.channel_names:
+          if uchan and channel!=uchan:
+            continue
+          print(f"Enabling channel {channel}")
+          self.snmpset_cmd(f"outputSwitch.{channel} i 1")
+
+    def disable(self,uchan=None):
+
+        for channel in reversed(self.channel_names):
+          if uchan and channel!=uchan:
+            continue
+          print(f"Disabling channel {channel}")
+          self.snmpset_cmd(f"outputSwitch.{channel} i 0")
 
     def print_config(self):
         """
