@@ -44,7 +44,7 @@ class mpod_control:
 
     def __init__(self, dry_run = False):
         self.ip_address_crate = os.environ.get("MPOD_CRATE_IP", '192.168.10.50')
-        self.net_snmp_install = os.environ.get('NET_SNMP_INSTALL', '/sdf/home/m/mgignac/LDMX/MPOD/net-snmp-5.9.4')
+        self.net_snmp_install = os.environ.get('NET_SNMP_INSTALL', '/u1/ldmx/net-snmp-5.9.4/install')
 
         self.module_type      = None
         self.dry_run          = dry_run
@@ -74,7 +74,7 @@ class mpod_control:
 
 
     def _snmp_cmd(self, cmd, *args):
-        cmd = f'{self.net_snmp_install}/bin/snmp{cmd} -v 2c'
+        cmd = f'{self.net_snmp_install}/bin/snmp{cmd} -v 2c '
         cmd += f'-M {self.net_snmp_install}/mibs -m +WIENER-CRATE-MIB '
         cmd += ('-c public' if cmd != 'set' else '-c guru')
         cmd += f' {self.ip_address_crate} '
@@ -117,21 +117,30 @@ class mpod_control:
             print(self.snmpget_cmd(crate_param))
 
 
-    def print_channel_status(self, channel):
-        ch_params = [
-            "outputSwitch",
-            "outputVoltage",
-            "outputCurrent",
-            "outputSupervisionMinSenseVoltage",
-            "outputSupervisionMaxSenseVoltage",
-            "outputVoltageRiseRate",
-            "outputVoltageFallRate",
-            "outputMeasurementTerminalVoltage",
-            "outputMeasurementCurrent"
-        ]
-        for ch_param in ch_params:
-            ch_rtn = self.snmpget_cmd(f"{ch_param}.{channel}")
-            print(ch_rtn.split())
+    @command
+    def status(self, channel = None):
+        channels = self.channels
+        if channel is not None:
+            channels = { channel:  self.channels[channel] }
+
+        status = {
+            name: {
+                param: self.snmpget_cmd(f'{param}.{channel.mpod_name}')
+                for param in [
+                    "outputSwitch",
+                    "outputVoltage",
+                    "outputCurrent",
+                    "outputSupervisionMinSenseVoltage",
+                    "outputSupervisionMaxSenseVoltage",
+                    "outputVoltageRiseRate",
+                    "outputVoltageFallRate",
+                    "outputMeasurementTerminalVoltage",
+                    "outputMeasurementCurrent"
+                ]
+            }
+            for name, channel in channels.items()
+        }
+        print(json.dumps(status, indent=2))
          
 
     @command
