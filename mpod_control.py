@@ -3,6 +3,7 @@ import subprocess
 import typing
 import json
 from dataclasses import dataclass
+from pathlib import Path
 
 def command(func):
     """decorator to itemize members that are CLI commands"""
@@ -42,10 +43,9 @@ class mpod_control:
     """
 
     def __init__(self, dry_run = False):
-        self.ip_address_crate = os.environ.get("MPOD_CRATE_IP", None)
-        if self.ip_address_crate is None:
-            raise ValueError('Need to define the MPOD_CRATE_IP environment variable so I know where to find the MPOD!')
+        self.ip_address_crate = os.environ.get("MPOD_CRATE_IP", '192.168.10.50')
         self.net_snmp_install = os.environ.get('NET_SNMP_INSTALL', '/sdf/home/m/mgignac/LDMX/MPOD/net-snmp-5.9.4')
+
         self.module_type      = None
         self.dry_run          = dry_run
         self.voltage_range    = None
@@ -74,7 +74,7 @@ class mpod_control:
 
 
     def _snmp_cmd(self, cmd, *args):
-        cmd = f'snmp{cmd} -v 2c'
+        cmd = f'{self.net_snmp_install}/bin/snmp{cmd} -v 2c'
         cmd += f'-M {self.net_snmp_install}/mibs -m +WIENER-CRATE-MIB '
         cmd += ('-c public' if cmd != 'set' else '-c guru')
         cmd += f' {self.ip_address_crate} '
