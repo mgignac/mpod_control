@@ -142,13 +142,15 @@ class mpod_control:
             for name, channel in channels.items()
         }
         print(json.dumps(status, indent=2))
+        return status
          
 
     @command
     def enable(self, uchan = None):
-        for channel in self.channels.values():
+        for name, channel in self.channels.items():
             if uchan is not None and channel.mpod_name != uchan:
                 continue
+            print(name)
 
             if channel.sense_rails is not None:
                 self.snmpset_cmd(f"outputSupervisionMinSenseVoltage.{channel.mpod_name} F {channel.sense_rails[0]}")
@@ -162,17 +164,19 @@ class mpod_control:
             if channel.fall_rate is not None and channel.fall_rate > 0:
                 self.snmpset_cmd(f"outputVoltageFallRate.{channel.mpod_name} F {channel.fall_rate}")
 
-            self.print_channel_status(channel.mpod_name)
+            self.status(name)
 
             self.snmpset_cmd(f'outputSwitch.{channel.mpod_name} i 1')
-
+            
 
     @command
-    def disable(self,uchan=None):
-        for channel in reversed(self.channels.values()):
+    def disable(self, uchan = None):
+        for name, channel in reversed(self.channels.items()):
             if uchan is not None and channel.mpod_name != uchan:
                 continue
+            print(name)
             self.snmpset_cmd(f"outputSwitch.{channel.mpod_name} i 0")
+
 
     @command
     def print(self):
