@@ -45,6 +45,7 @@ class mpod_control:
     def __init__(self, dry_run = False):
         self.ip_address_crate = os.environ.get("MPOD_CRATE_IP", '192.168.10.50')
         self.net_snmp_install = os.environ.get('NET_SNMP_INSTALL', '/u1/ldmx/net-snmp-5.9.4/install')
+        self.mibs_dir = os.environ.get('NET_SNMP_MIBS_DIR', '/u1/ldmx/net-snmp-5.9.4/mibs')
 
         self.module_type      = None
         self.dry_run          = dry_run
@@ -75,7 +76,7 @@ class mpod_control:
 
     def _snmp_cmd(self, cmd, *args):
         cmd = f'{self.net_snmp_install}/bin/snmp{cmd} -v 2c '
-        cmd += f'-M {self.net_snmp_install}/mibs -m +WIENER-CRATE-MIB '
+        cmd += f'-M {self.mibs_dir} -m +WIENER-CRATE-MIB '
         cmd += ('-c public' if cmd != 'set' else '-c guru')
         cmd += f' {self.ip_address_crate} '
         cmd += ' '.join(args)
