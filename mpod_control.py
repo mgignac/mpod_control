@@ -45,7 +45,7 @@ class mpod_control:
     def __init__(self, dry_run = False):
         self.ip_address_crate = os.environ.get("MPOD_CRATE_IP", '192.168.10.50')
         self.net_snmp_install = os.environ.get('NET_SNMP_INSTALL', '/u1/ldmx/net-snmp-5.9.4/install')
-        self.mibs_dir = os.environ.get('NET_SNMP_MIBS_DIR', '/u1/ldmx/net-snmp-5.9.4/mibs')
+        self.mibs_dir = os.environ.get('NET_SNMP_MIBS_DIR', None)
 
         self.module_type      = None
         self.dry_run          = dry_run
@@ -75,16 +75,22 @@ class mpod_control:
 
 
     def _snmp_cmd(self, cmd, *args):
-        cmd = f'{self.net_snmp_install}/bin/snmp{cmd} -v 2c '
-        cmd += f'-M {self.mibs_dir} -m +WIENER-CRATE-MIB '
-        cmd += ('-c public' if cmd != 'set' else '-c guru')
-        cmd += f' {self.ip_address_crate} '
-        cmd += ' '.join(args)
+        cmd = [
+            f'{self.net_snmp_install}/bin/snmp{cmd}',
+            '-v', '2c',
+        ]
+        if self.mibs_dir is not None:
+            cmd += ['-M', self.mibs_dir]
+        cmd += ['-m', '+WIENER-CRATE-MIB']
+        cmd += ['-c', 'public' if cmd != 'set' else 'guru']
+        cmd += [self.ip_address_crate]
+        cmd += args
         if self.dry_run:
             print(cmd)
             return 'did not run'
         else:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            result.check_returncode()
             return result.stdout.strip()
 
 
