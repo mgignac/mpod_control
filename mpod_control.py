@@ -12,6 +12,24 @@ def command(func):
 command.__list__ = []
 
 
+def trim_snmpget_output(out):
+    """Trim the output of an snmpget call to just the value at the end
+
+    The (rough) spec looks like
+
+        NAME-SPACE::parameter.mpod_name = [Opaque: ] type: val [units]
+
+    - NAME-SPACE appears to always be WIENER-CRATE-MIB (makes sense for us)
+    - 'Opaque: ' is only included for read-only parameters
+    - 'type' is either 'INTEGER' or 'Float'
+
+    In any case, I just get the last segment of text after splitting by 
+    the colon ':' which provides the val and maybe its units.
+    """
+
+    return out.split(':')[-1].strip()
+
+
 @dataclass
 class _channel:
     """A single channel output from MPOD
@@ -75,6 +93,23 @@ class mpod_control:
 
 
     def _snmp_cmd(self, cmd, *args):
+        """run a net-snmp program using the configured install
+
+        Parameters
+        ----------
+        cmd: str
+            one of the snmp programs (e.g. 'get' for snmpget)
+        args: List[str]
+            further arguments to the program
+
+        If we are configured to be a dry run, we just print
+        the constructed command and then return 'did not run'.
+        Otherwise, we run the command with subprocess.run,
+        capture the output assuming its text, check that
+        the exit code is zero and return the stdout of
+        the command.
+        """
+
         cmd = [
             f'{self.net_snmp_install}/bin/snmp{cmd}',
             '-v', '2c',
@@ -95,14 +130,46 @@ class mpod_control:
 
 
     def snmpwalk_cmd(self, *args):
-        return self._snmp_cmd('walk')
+        """run a snmpwalk call
+
+        Parameters
+        ----------
+        args: List[str]
+            arguments to provide to snmpwalk
+        """
+
+        return self._snmp_cmd('walk', *args)
 
 
-    def snmpget_cmd(self, *args):
-        return self._snmp_cmd('get', *args)
+    def snmpget_cmd(self, *args, raw = False):
+        """run an snmpget call
+
+        Parameters
+        ----------
+        args: List[str]
+            arguments to provide to snmpget
+        raw: bool
+            whether to post-process output
+            The post-processing attempts to trim redundant information and
+            just get the specific values.
+            See the trim_snmpget_output for details
+        """
+
+        stdout = self._snmp_cmd('get', *args)
+        if raw:
+            return stdout
+        return trim_snmpget_output(stdout)
 
 
     def snmpset_cmd(self, *args):
+        """run a snmpset call
+
+        Parameters
+        ----------
+        args: List[str]
+            arguments to provide to snmpset
+        """
+
         return self._snmp_cmd('set', *args)
 
 
@@ -110,29 +177,53 @@ class mpod_control:
         return self.snmpwalk_cmd('outputName')
 
 
-    def print_crate_properties(self):
-        crate_properties = [
-            "psFirmwareVersion",
-            "psSerialNumber",
-            "fanAirTemperature",
-            "fanNominalSpeed",
-            "fanNumberOfFans",
-            "fanSpeed",
-        ]
+    @command
+    def print_crate_properties(self, raw = False):
+        """print the properties of the MPOD housing crate
 
-        for crate_param in crate_properties:
-            print(self.snmpget_cmd(crate_param))
+        Parameters
+        ----------
+        raw: bool
+            whether to post-process the output of the snmpget
+        """
+
+        crate_properties = {
+            name: self.snmpget_cmd(name, raw = raw)
+            for name in [
+                #"psFirmwareVersion", # not in MIB spec
+                "psSerialNumber",
+                "fanAirTemperature",
+                "fanNominalSpeed",
+                "fanNumberOfFans",
+                "fanSpeed",
+            ]
+        }
+        print(json.dumps(crate_properties, indent=2))
 
 
     @command
-    def status(self, channel = None):
+    def status(self, channel = None, raw = False, echo = True):
+        """retrieve the status of the current configuration
+
+        Parameters
+        ----------
+        channel: str
+            our name of specific channel to focus on
+        raw: bool
+            whether to post-process output from snmpget commands
+            The post-processing attempts to trim redundant information and
+            just get the specific values.
+        echo: bool
+            whether to print the status before returning it
+        """
+
         channels = self.channels
         if channel is not None:
             channels = { channel:  self.channels[channel] }
 
         status = {
             name: {
-                param: self.snmpget_cmd(f'{param}.{channel.mpod_name}')
+                param: self.snmpget_cmd(f'{param}.{channel.mpod_name}', raw = raw)
                 for param in [
                     "outputSwitch",
                     "outputVoltage",
@@ -153,10 +244,19 @@ class mpod_control:
 
     @command
     def enable(self, uchan = None):
+        """enable the current configuration
+
+        Parameters
+        ----------
+        uchan: str
+            mpod channel name to enable (and only this one)
+            if None, enable all of the channels in the loaded configuration in order
+        """
+
         for name, channel in self.channels.items():
             if uchan is not None and channel.mpod_name != uchan:
                 continue
-            print(name)
+            print(f'enabling {name}')
 
             if channel.sense_rails is not None:
                 self.snmpset_cmd(f"outputSupervisionMinSenseVoltage.{channel.mpod_name} F {channel.sense_rails[0]}")
@@ -177,10 +277,19 @@ class mpod_control:
 
     @command
     def disable(self, uchan = None):
+        """disable the current channels
+
+        Parameters
+        ----------
+        uchan: str
+            mpod channel name to disable (and only this one)
+            if None, disable all of the channels in the loaded configuration in reverse order
+        """
+
         for name, channel in reversed(self.channels.items()):
             if uchan is not None and channel.mpod_name != uchan:
                 continue
-            print(name)
+            print(f'disabling {name}')
             self.snmpset_cmd(f"outputSwitch.{channel.mpod_name} i 0")
 
 
@@ -216,8 +325,15 @@ def main():
     parser.add_argument('config', help='JSON configuration for an MPOD connection')
     args = parser.parse_args()
 
-    mc = mpod_control.from_json(args.config, dry_run = args.dry_run)
-    getattr(mc, args.command)()
+    try:
+        mc = mpod_control.from_json(args.config, dry_run = args.dry_run)
+        getattr(mc, args.command)()
+    except subprocess.CalledProcessError as e:
+        print(f'Called process returned non-zero exit status {e.returncode}')
+        print('cmd:', *e.cmd)
+        print('stderr:\n', e.stderr.strip())
+        if e.stdout.strip() != '':
+            print('stdout:\n', e.stdout.strip())
 
 
 if __name__ == '__main__':
