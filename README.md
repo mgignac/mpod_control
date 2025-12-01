@@ -7,7 +7,7 @@ Used and tested with [net-snmp](https://www.net-snmp.org/) v5.9.4.
 
 Need [`WIENER-CRATE-MIB.txt`](WIENER-CRATE-MIB.txt) to specify how MPOD talks via SNMP.
 This file should be placed in the installation location of net-snmp
-in the `install/snmp/mibs` subdirectory along side the other configuration files.
+in the `install/share/snmp/mibs` subdirectory along side the other configuration files.
 
 ## Usage
 Besides access to the executables installed by `net-snmp`, we
