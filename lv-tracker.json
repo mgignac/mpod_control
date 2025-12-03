@@ -1,0 +1,30 @@
+{
+  "module_type": "LV",
+  "voltage_range": "8V",
+  "channels": {
+    "DIG_VIN": {
+      "mpod_name": "u0",
+      "voltage": 5.3,
+      "current": 2.0,
+      "sense_rails": [4.6, 5.5]
+    },
+    "ANA_POS_VIN": {
+      "mpod_name": "u1",
+      "voltage": 5.95,
+      "current": 2.0,
+      "sense_rails": [5.0,6.2]
+    },
+    "ANA_NEG_VIN": {
+      "mpod_name": "u2",
+      "voltage": 5.7,
+      "current": 2.0,
+      "sense_rails": [5.0,6.0]
+    },
+    "HY_VIN_A": {
+      "mpod_name": "u3",
+      "voltage": 5.2,
+      "current": 2.0,
+      "sense_rails": [5.0,6.0]
+    }
+  }
+}

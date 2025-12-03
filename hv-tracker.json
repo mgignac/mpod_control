@@ -1,0 +1,34 @@
+{
+  "module_type": "TRK-HV",
+  "voltage_range": "1000V",
+  "channels": {
+    "MODULE_1": {
+      "mpod_name": "u200",
+      "voltage": 180.0,
+      "current": 0.001,
+      "rise_rate": 5,
+      "fall_rate": 10
+    },
+    "MODULE_2": {
+      "mpod_name": "u201",
+      "voltage": 180.0,
+      "current": 0.001,
+      "rise_rate": 5,
+      "fall_rate": 10
+    },
+    "MODULE_3": {
+      "mpod_name": "u202",
+      "voltage": 180.0,
+      "current": 0.001,
+      "rise_rate": 5,
+      "fall_rate": 10
+    },
+    "MODULE_4": {
+      "mpod_name": "u203",
+      "voltage": 180.0,
+      "current": 0.001,
+      "rise_rate": 5,
+      "fall_rate": 10
+    }
+  }
+}
