@@ -110,6 +110,9 @@ class mpod_control:
         the command.
         """
 
+        permissions = 'public'
+        if cmd == 'set':
+            permissions = 'guru'
         cmd = [
             f'{self.net_snmp_install}/bin/snmp{cmd}',
             '-v', '2c',
@@ -117,7 +120,7 @@ class mpod_control:
         if self.mibs_dir is not None:
             cmd += ['-M', self.mibs_dir]
         cmd += ['-m', '+WIENER-CRATE-MIB']
-        cmd += ['-c', 'public' if cmd != 'set' else 'guru']
+        cmd += ['-c', permissions]
         cmd += [self.ip_address_crate]
         cmd += args
         if self.dry_run:
@@ -240,11 +243,11 @@ class mpod_control:
         }
         print(json.dumps(status, indent=2))
         return status
-         
+
 
     @command
-    def enable(self, uchan = None):
-        """enable the current configuration
+    def configure(self, uchan = None):
+        """apply the current configuration to the MPOD
 
         Parameters
         ----------
@@ -252,11 +255,10 @@ class mpod_control:
             mpod channel name to enable (and only this one)
             if None, enable all of the channels in the loaded configuration in order
         """
-
         for name, channel in self.channels.items():
             if uchan is not None and channel.mpod_name != uchan:
                 continue
-            print(f'enabling {name}')
+            print(f'configuring {name}')
 
             if channel.sense_rails is not None:
                 self.snmpset_cmd(f"outputSupervisionMinSenseVoltage.{channel.mpod_name}", "F",  str(channel.sense_rails[0]))
@@ -271,7 +273,25 @@ class mpod_control:
                 self.snmpset_cmd(f"outputVoltageFallRate.{channel.mpod_name}", "F", str(channel.fall_rate))
 
             self.status(name)
+         
 
+    @command
+    def enable(self, uchan = None):
+        """enable the current configuration
+
+        Parameters
+        ----------
+        uchan: str
+            mpod channel name to enable (and only this one)
+            if None, enable all of the channels in the loaded configuration in order
+        """
+        self.configure(uchan)
+
+        for name, channel in self.channels.items():
+            if uchan is not None and channel.mpod_name != uchan:
+                continue
+
+            print(f'enabling {name}')
             self.snmpset_cmd(f'outputSwitch.{channel.mpod_name}', 'i', '1')
             
 
