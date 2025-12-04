@@ -310,7 +310,7 @@ class mpod_control:
             if uchan is not None and channel.mpod_name != uchan:
                 continue
             print(f'disabling {name}')
-            self.snmpset_cmd(f"outputSwitch.{channel.mpod_name} i 0")
+            self.snmpset_cmd(f"outputSwitch.{channel.mpod_name}", "i", "0")
 
 
     @command
