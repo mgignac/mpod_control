@@ -1,0 +1,34 @@
+{
+  "module_type": "ECAL-HV",
+  "voltage_range": "1000V",
+  "channels": {
+    "ECAL-HV-0": {
+      "mpod_name": "u300",
+      "voltage": 10.0,
+      "current": 0.001,
+      "rise_rate": 1,
+      "fall_rate": 1
+    },
+    "ECAL-HV-1": {
+      "mpod_name": "u301",
+      "voltage": 10.0,
+      "current": 0.001,
+      "rise_rate": 1,
+      "fall_rate": 1
+    },
+    "ECAL-HV-2": {
+      "mpod_name": "u302",
+      "voltage": 0.0,
+      "current": 0.0,
+      "rise_rate": 1,
+      "fall_rate": 1
+    },
+    "ECAL-HV-3": {
+      "mpod_name": "u303",
+      "voltage": 10.0,
+      "current": 0.001,
+      "rise_rate": 1,
+      "fall_rate": 1
+    }
+  }
+}

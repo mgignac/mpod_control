@@ -110,6 +110,9 @@ class mpod_control:
         the command.
         """
 
+        permissions = 'public'
+        if cmd == 'set':
+            permissions = 'guru'
         cmd = [
             f'{self.net_snmp_install}/bin/snmp{cmd}',
             '-v', '2c',
@@ -117,7 +120,7 @@ class mpod_control:
         if self.mibs_dir is not None:
             cmd += ['-M', self.mibs_dir]
         cmd += ['-m', '+WIENER-CRATE-MIB']
-        cmd += ['-c', 'public' if cmd != 'set' else 'guru']
+        cmd += ['-c', permissions]
         cmd += [self.ip_address_crate]
         cmd += args
         if self.dry_run:
@@ -240,6 +243,36 @@ class mpod_control:
         }
         print(json.dumps(status, indent=2))
         return status
+
+
+    @command
+    def configure(self, uchan = None):
+        """apply the current configuration to the MPOD
+
+        Parameters
+        ----------
+        uchan: str
+            mpod channel name to enable (and only this one)
+            if None, enable all of the channels in the loaded configuration in order
+        """
+        for name, channel in self.channels.items():
+            if uchan is not None and channel.mpod_name != uchan:
+                continue
+            print(f'configuring {name}')
+
+            if channel.sense_rails is not None:
+                self.snmpset_cmd(f"outputSupervisionMinSenseVoltage.{channel.mpod_name}", "F",  str(channel.sense_rails[0]))
+                self.snmpset_cmd(f"outputSupervisionMaxSenseVoltage.{channel.mpod_name}", "F", str(channel.sense_rails[1]))
+
+            self.snmpset_cmd(f"outputVoltage.{channel.mpod_name}", "F", str(channel.voltage))
+            self.snmpset_cmd(f"outputCurrent.{channel.mpod_name}", "F", str(channel.current))
+
+            if channel.rise_rate is not None and channel.rise_rate > 0:
+                self.snmpset_cmd(f"outputVoltageRiseRate.{channel.mpod_name}", "F", str(channel.rise_rate))
+            if channel.fall_rate is not None and channel.fall_rate > 0:
+                self.snmpset_cmd(f"outputVoltageFallRate.{channel.mpod_name}", "F", str(channel.fall_rate))
+
+            self.status(name)
          
 
     @command
@@ -252,27 +285,14 @@ class mpod_control:
             mpod channel name to enable (and only this one)
             if None, enable all of the channels in the loaded configuration in order
         """
+        self.configure(uchan)
 
         for name, channel in self.channels.items():
             if uchan is not None and channel.mpod_name != uchan:
                 continue
+
             print(f'enabling {name}')
-
-            if channel.sense_rails is not None:
-                self.snmpset_cmd(f"outputSupervisionMinSenseVoltage.{channel.mpod_name} F {channel.sense_rails[0]}")
-                self.snmpset_cmd(f"outputSupervisionMaxSenseVoltage.{channel.mpod_name} F {channel.sense_rails[1]}")
-
-            self.snmpset_cmd(f"outputVoltage.{channel.mpod_name} F {channel.voltage}")
-            self.snmpset_cmd(f"outputCurrent.{channel.mpod_name} F {channel.current}")
-
-            if channel.rise_rate is not None and channel.rise_rate > 0:
-                self.snmpset_cmd(f"outputVoltageRiseRate.{channel.mpod_name} F {channel.rise_rate}")
-            if channel.fall_rate is not None and channel.fall_rate > 0:
-                self.snmpset_cmd(f"outputVoltageFallRate.{channel.mpod_name} F {channel.fall_rate}")
-
-            self.status(name)
-
-            self.snmpset_cmd(f'outputSwitch.{channel.mpod_name} i 1')
+            self.snmpset_cmd(f'outputSwitch.{channel.mpod_name}', 'i', '1')
             
 
     @command
