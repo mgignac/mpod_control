@@ -259,20 +259,20 @@ class mpod_control:
             print(f'enabling {name}')
 
             if channel.sense_rails is not None:
-                self.snmpset_cmd(f"outputSupervisionMinSenseVoltage.{channel.mpod_name} F {channel.sense_rails[0]}")
-                self.snmpset_cmd(f"outputSupervisionMaxSenseVoltage.{channel.mpod_name} F {channel.sense_rails[1]}")
+                self.snmpset_cmd(f"outputSupervisionMinSenseVoltage.{channel.mpod_name}", "F",  str(channel.sense_rails[0]))
+                self.snmpset_cmd(f"outputSupervisionMaxSenseVoltage.{channel.mpod_name}", "F", str(channel.sense_rails[1]))
 
-            self.snmpset_cmd(f"outputVoltage.{channel.mpod_name} F {channel.voltage}")
-            self.snmpset_cmd(f"outputCurrent.{channel.mpod_name} F {channel.current}")
+            self.snmpset_cmd(f"outputVoltage.{channel.mpod_name}", "F", str(channel.voltage))
+            self.snmpset_cmd(f"outputCurrent.{channel.mpod_name}", "F", str(channel.current))
 
             if channel.rise_rate is not None and channel.rise_rate > 0:
-                self.snmpset_cmd(f"outputVoltageRiseRate.{channel.mpod_name} F {channel.rise_rate}")
+                self.snmpset_cmd(f"outputVoltageRiseRate.{channel.mpod_name}", "F", str(channel.rise_rate))
             if channel.fall_rate is not None and channel.fall_rate > 0:
-                self.snmpset_cmd(f"outputVoltageFallRate.{channel.mpod_name} F {channel.fall_rate}")
+                self.snmpset_cmd(f"outputVoltageFallRate.{channel.mpod_name}", "F", str(channel.fall_rate))
 
             self.status(name)
 
-            self.snmpset_cmd(f'outputSwitch.{channel.mpod_name} i 1')
+            self.snmpset_cmd(f'outputSwitch.{channel.mpod_name}', 'i', '1')
             
 
     @command
