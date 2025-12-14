@@ -23,7 +23,7 @@
     "HY_VIN_A": {
       "mpod_name": "u3",
       "voltage": 5.2,
-      "current": 2.5,
+      "current": 3.0,
       "sense_rails": [5.0,6.0]
     }
   }

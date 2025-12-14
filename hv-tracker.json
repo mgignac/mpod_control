@@ -5,28 +5,28 @@
     "MODULE_1": {
       "mpod_name": "u200",
       "voltage": 65.0,
-      "current": 0.001,
+      "current": 0.00002,
       "rise_rate": 5,
       "fall_rate": 10
     },
     "MODULE_2": {
       "mpod_name": "u201",
       "voltage": 65.0,
-      "current": 0.001,
+      "current": 0.00002,
       "rise_rate": 5,
       "fall_rate": 10
     },
     "MODULE_3": {
       "mpod_name": "u202",
       "voltage": 65.0,
-      "current": 0.001,
+      "current": 0.00002,
       "rise_rate": 5,
       "fall_rate": 10
     },
     "MODULE_4": {
       "mpod_name": "u203",
       "voltage": 65.0,
-      "current": 0.001,
+      "current": 0.00002,
       "rise_rate": 5,
       "fall_rate": 10
     }
